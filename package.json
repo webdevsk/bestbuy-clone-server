@@ -1,0 +1,21 @@
+{
+  "name": "bestbuy-clone-server",
+  "version": "1.0.0",
+  "description": "Backend for the Bestbuy clone React app",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon",
+    "test": "node server.js"
+  },
+  "author": "webdevsk",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.5.2",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^5.5.2"
+  }
+}
