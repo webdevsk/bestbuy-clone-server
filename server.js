@@ -10,6 +10,26 @@ const prisma = new PrismaClient()
 app.use(express.json())
 app.use(cors())
 
+const data = {}
+
+app.listen(5000, async () => {
+    try {
+        const response = await axios('https://dummyjson.com/products?limit=0')
+        Object.assign(data, {
+            statusCode: 200,
+            products: response.data?.products,
+            categories: [...new Map(response.data?.products.map((item) => [item["category"], item])).keys()],
+            brands: [...new Map(response.data?.products.map((item) => [item["brand"], item])).keys()],
+            total: response.data?.total
+        })
+    } catch (error) {
+        Object.assign(data, {
+            statusCode: 500,
+            message: error.message
+        })
+    }
+})
+
 const jwtVerify = (req, res, next) => {
     const token = req?.headers?.authorization?.split(" ")[1]
     jwt.verify(token, process.env.JWT_CLIENT_SECRET, { audience: process.env.AUDIENCE, algorithms: ['RS256'] }, (err, decoded) => {
@@ -44,13 +64,23 @@ const prismaErrHandler = (err, req, res, next) => {
 
 app.use(prismaErrHandler)
 
+
 app.get("/products", async (req, res) => {
-    try {
-        const response = await axios('https://dummyjson.com/products')
-        res.json(response.data)
-    } catch (error) {
-        res.json({ code: error.code, message: error.message }, { status: 500 })
-    }
+    if (data.statusCode === 500) return res.status(500).json("Server error: DummyJson")
+
+    const skip = "skip" in req.query ? parseInt(req.query.skip) : 0
+    const limit = "limit" in req.query ? parseInt(req.query.limit) : 30
+    const { total, categories, brands } = data
+    const products = data.products.slice(skip, limit)
+
+    res.json({
+        products,
+        skip,
+        limit,
+        total,
+        categories,
+        brands
+    })
 })
 
 app.get("/cart/:email", async (req, res) => {
@@ -101,4 +131,3 @@ app.delete("/cart", async (req, res) => {
 
 
 
-app.listen(5000)
