@@ -20,6 +20,9 @@ app.listen(5000, async () => {
             products: response.data?.products,
             categories: [...new Map(response.data?.products.map((item) => [item["category"], item])).keys()],
             brands: [...new Map(response.data?.products.map((item) => [item["brand"], item])).keys()],
+            exclusiveProducts: response.data?.products.filter(product => product.discountPercentage >= 10 &&
+                (product.category === "smartphones" ||
+                    product.category === "laptops")),
             total: response.data?.total
         })
     } catch (error) {
@@ -70,11 +73,12 @@ app.get("/products", async (req, res) => {
 
     const skip = "skip" in req.query ? parseInt(req.query.skip) : 0
     const limit = "limit" in req.query ? parseInt(req.query.limit) : 30
-    const { total, categories, brands } = data
+    const { total, categories, brands, exclusiveProducts } = data
     const products = data.products.slice(skip, limit)
 
     res.json({
         products,
+        exclusiveProducts,
         skip,
         limit,
         total,
