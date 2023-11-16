@@ -30,7 +30,7 @@ app.listen(process.env.PORT, async () => {
             statusCode: 200,
             products: response.data?.products,
             categories: [...new Set(response.data.products.map(item => item.category))],
-            brands: [...new Map(response.data.products.map(item => [item.brand, item])).keys()],
+            brands: [...new Set(response.data.products.map(item => item.brand))],
             // discount more than 10% AND from those categories inside array
             exclusiveProducts: response.data?.products.filter(product =>
                 product.discountPercentage >= 10 && ["smartphones", "laptops"].some(cat => product.category === cat)
