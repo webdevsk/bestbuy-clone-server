@@ -2,11 +2,11 @@
   "name": "bestbuy-clone-server",
   "version": "1.0.0",
   "description": "Backend for the Bestbuy clone React app",
-  "main": "server.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon",
-    "test": "node server.js"
+    "start": "nodemon index.js",
+    "test": "node index.js"
   },
   "author": "webdevsk",
   "license": "ISC",
