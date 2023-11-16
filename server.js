@@ -1,32 +1,37 @@
-const { default: axios } = require('axios')
-const express = require('express')
-const { PrismaClient } = require('@prisma/client')
-require('dotenv').config()
+import axios from 'axios'
+import express from 'express'
+import { PrismaClient } from '@prisma/client'
+import('dotenv').then(dot => dot.config())
+import cors from 'cors'
+import jwt from 'jsonwebtoken'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js'
+
+
 const app = express()
-const cors = require('cors')
-const jwt = require('jsonwebtoken')
-const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library')
 const prisma = new PrismaClient()
 app.use(express.json())
 app.use(cors())
 
-const data = {}
+// Getting products on Server start
+// For caching and filtering
+export const CACHED_PRODUCT_DATA = {}
 
 app.listen(5000, async () => {
     try {
         const response = await axios('https://dummyjson.com/products?limit=0')
-        Object.assign(data, {
+        Object.assign(CACHED_PRODUCT_DATA, {
             statusCode: 200,
             products: response.data?.products,
-            categories: [...new Map(response.data?.products.map((item) => [item["category"], item])).keys()],
-            brands: [...new Map(response.data?.products.map((item) => [item["brand"], item])).keys()],
-            exclusiveProducts: response.data?.products.filter(product => product.discountPercentage >= 10 &&
-                (product.category === "smartphones" ||
-                    product.category === "laptops")),
+            categories: [...new Set(response.data.products.map(item => item.category))],
+            brands: [...new Map(response.data.products.map(item => [item.brand, item])).keys()],
+            // discount more than 10% AND from those categories inside array
+            exclusiveProducts: response.data?.products.filter(product =>
+                product.discountPercentage >= 10 && ["smartphones", "laptops"].some(cat => product.category === cat)
+            ),
             total: response.data?.total
         })
     } catch (error) {
-        Object.assign(data, {
+        Object.assign(CACHED_PRODUCT_DATA, {
             statusCode: 500,
             message: error.message
         })
@@ -67,14 +72,13 @@ const prismaErrHandler = (err, req, res, next) => {
 
 app.use(prismaErrHandler)
 
-
 app.get("/products", async (req, res) => {
-    if (data.statusCode === 500) return res.status(500).json("Server error: DummyJson")
+    if (CACHED_PRODUCT_DATA.statusCode === 500) return res.status(500).json("Server error: DummyJson")
 
     const skip = "skip" in req.query ? parseInt(req.query.skip) : 0
     const limit = "limit" in req.query ? parseInt(req.query.limit) : 30
-    const { total, categories, brands, exclusiveProducts } = data
-    const products = data.products.slice(skip, limit)
+    const { total, categories, brands, exclusiveProducts } = CACHED_PRODUCT_DATA
+    const products = CACHED_PRODUCT_DATA.products.slice(skip, limit)
 
     res.json({
         products,
@@ -91,7 +95,7 @@ app.get("/cart/:email", async (req, res) => {
     console.log("cart/get", req.params)
     const { email } = req.params
     if (!email) return res.status(400).json({ message: "Email not provided" })
-    const data = await prisma.user.upsert({
+    const result = await prisma.user.upsert({
         where: { email },
         select: {
             cart: {
@@ -104,7 +108,23 @@ app.get("/cart/:email", async (req, res) => {
         update: {},
         create: { email }
     })
-    res.json(data.cart ?? [])
+    if (!result.cart.length) return res.json({
+        products: [],
+        quantity: 0,
+        total: 0
+    })
+
+    const populatedCartProducts = result.cart.map(({ itemId, quantity }) => ({
+        ...CACHED_PRODUCT_DATA.products.find(prod => prod.id === itemId),
+        quantity
+    }))
+    res.json({
+        products: populatedCartProducts,
+        quantity: populatedCartProducts.length,
+        total: populatedCartProducts.reduce((accumulator, product) => {
+            return accumulator += product.price
+        }, 0)
+    })
 })
 
 app.post("/cart", async (req, res) => {
@@ -133,5 +153,4 @@ app.delete("/cart", async (req, res) => {
     res.json(result)
 })
 
-
-
+export { app }

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend for the Bestbuy clone React app",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "nodemon",
     "test": "node server.js"
@@ -19,3 +20,4 @@
     "prisma": "^5.5.2"
   }
 }
+
