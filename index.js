@@ -1,7 +1,7 @@
+import 'dotenv-flow/config'
 import axios from 'axios'
 import express from 'express'
 import cors from 'cors'
-import 'dotenv/config'
 // modules
 import productApis from "./apis/productApis.js"
 import cartApis from "./apis/cartApis.js"
@@ -23,7 +23,8 @@ app.use('/', cartApis)
 // For caching and filtering
 export const CACHED_PRODUCT_DATA = {}
 
-app.listen(process.env.PORT, async () => {
+app.listen(process.env.PORT, async (props) => {
+    console.log("Server started and listening to Port: " + process.env.PORT)
     try {
         const response = await axios('https://dummyjson.com/products?limit=0')
         Object.assign(CACHED_PRODUCT_DATA, {

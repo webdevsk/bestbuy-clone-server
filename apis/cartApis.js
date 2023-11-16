@@ -33,12 +33,11 @@ router.get("/cart/:email", async (req, res) => {
         ...CACHED_PRODUCT_DATA.products.find(prod => prod.id === itemId),
         quantity
     }))
+
     res.json({
         products: populatedCartProducts,
         quantity: populatedCartProducts.length,
-        total: populatedCartProducts.reduce((accumulator, product) => {
-            return accumulator += product.price
-        }, 0)
+        total: populatedCartProducts.reduce((accumulator, product) => accumulator += product.price, 0)
     })
 })
 
