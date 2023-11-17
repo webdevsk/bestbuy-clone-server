@@ -6,6 +6,16 @@ const prisma = new PrismaClient()
 
 const router = Router()
 
+const validateBody = async (req, res, next) => {
+    const errors = []
+    if (!req.body) errors.push("Parameters are missing")
+    if (!req.body.email) errors.push("'email' is required field")
+    if (!req.body.itemId) errors.push("'itemId' is required field")
+    if (req.method !== "POST" && !req.body.quantity) errors.push("'quantity' is required field")
+    if (!!errors.length) return res.status(400).json({ message: errors.join("; ") })
+    next()
+}
+
 router.get("/cart/:email", async (req, res) => {
     console.log("cart/get", req.params)
     const { email } = req.params
@@ -41,10 +51,24 @@ router.get("/cart/:email", async (req, res) => {
     })
 })
 
-router.post("/cart", async (req, res) => {
+router.post("/cart", validateBody, async (req, res) => {
     console.log("cart/post", req.body)
-    if (!req.body) return res.status(400).json({ message: "No parameters given" })
     const { email: userEmail, itemId, quantity = 1 } = req.body
+
+    const result = await prisma.cart.upsert({
+        where: {
+            userEmail_itemId: { userEmail, itemId }
+        },
+        update: {},
+        create: { userEmail, itemId, quantity },
+    })
+
+    res.json(result)
+})
+
+router.patch("/cart", validateBody, async (req, res) => {
+    console.log("cart/patch", req.body)
+    const { email: userEmail, itemId, quantity } = req.body
 
     const result = await prisma.cart.upsert({
         where: {
@@ -57,9 +81,9 @@ router.post("/cart", async (req, res) => {
     res.json(result)
 })
 
-router.delete("/cart", async (req, res) => {
+router.delete("/cart", validateBody, async (req, res) => {
     console.log("cart/delete", req.body)
-    const { email: userEmail, itemId } = req?.body
+    const { email: userEmail, itemId } = req.body
     if (!userEmail && !itemId) return res.status(400).json({ message: "Missing parameters" })
     const result = await prisma.cart.delete({
         where: { userEmail }
