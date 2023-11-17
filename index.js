@@ -12,11 +12,14 @@ export const app = express()
 // middlewares
 app.use(express.json())
 app.use(cors())
-app.use(prismaErrHandler)
 
 // apis or routes
 app.use('/', productApis)
 app.use('/', cartApis)
+
+// after query errors
+// handle prisma errors
+app.use(prismaErrHandler)
 
 
 // Getting products on Server start
