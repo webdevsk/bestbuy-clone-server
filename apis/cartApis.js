@@ -9,9 +9,11 @@ const router = Router()
 const validateBody = async (req, res, next) => {
     const errors = []
     if (!req.body) errors.push("Parameters are missing")
-    if (!req.body.email) errors.push("'email' is required field")
-    if (!req.body.itemId) errors.push("'itemId' is required field")
-    if (req.method !== "POST" && !req.body.quantity) errors.push("'quantity' is required field")
+    if (!req.body.email) errors.push("'email' is a required field")
+    if (req.method !== "DELETE" && !req.body.itemId) errors.push("'itemId' is a required field")
+    if (req.method === "PATCH" && !req.body.quantity) errors.push("'quantity' is a required field")
+    if (req.method === "DELETE" && (!req.body.itemIds || !(Array.isArray(req.body.itemIds)))) errors.push("'itemIds' is a required field and should be of type 'Array'")
+
     if (!!errors.length) return res.status(400).json({ message: errors.join("; ") })
     next()
 }
@@ -47,7 +49,7 @@ router.get("/cart/:email", async (req, res) => {
     res.json({
         products: populatedCartProducts,
         quantity: populatedCartProducts.length,
-        total: populatedCartProducts.reduce((accumulator, product) => accumulator += product.price, 0)
+        total: populatedCartProducts.reduce((accumulator, product) => accumulator += (product.price * product.quantity), 0)
     })
 })
 
@@ -69,13 +71,11 @@ router.post("/cart", validateBody, async (req, res) => {
 router.patch("/cart", validateBody, async (req, res) => {
     console.log("cart/patch", req.body)
     const { email: userEmail, itemId, quantity } = req.body
-
-    const result = await prisma.cart.upsert({
+    const result = await prisma.cart.update({
         where: {
             userEmail_itemId: { userEmail, itemId }
         },
-        update: { quantity },
-        create: { userEmail, itemId, quantity },
+        data: { quantity },
     })
 
     res.json(result)
@@ -83,10 +83,12 @@ router.patch("/cart", validateBody, async (req, res) => {
 
 router.delete("/cart", validateBody, async (req, res) => {
     console.log("cart/delete", req.body)
-    const { email: userEmail, itemId } = req.body
-    if (!userEmail && !itemId) return res.status(400).json({ message: "Missing parameters" })
-    const result = await prisma.cart.delete({
-        where: { userEmail }
+    const { email: userEmail, itemIds, deleteAll = false } = req.body
+
+    const condition = deleteAll ? { userEmail } : { itemId: { in: itemIds } }
+
+    const result = await prisma.cart.deleteMany({
+        where: condition
     })
     res.json(result)
 })
