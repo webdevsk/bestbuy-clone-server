@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "node index.js"
+    "start": "node index.js",
+    "test": "nodemon"
   },
   "author": "webdevsk",
   "license": "ISC",
@@ -20,3 +20,4 @@
     "prisma": "^5.5.2"
   }
 }
+
