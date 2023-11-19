@@ -4,6 +4,9 @@
   "description": "Backend for the Bestbuy clone React app",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "nodemon"
