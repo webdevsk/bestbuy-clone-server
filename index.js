@@ -13,6 +13,7 @@ export const app = express()
 app.use(express.json())
 app.use(cors())
 
+
 // apis or routes
 app.use('/', productApis)
 app.use('/', cartApis)
@@ -20,6 +21,9 @@ app.use('/', cartApis)
 // after query errors
 // handle prisma errors
 app.use(prismaErrHandler)
+app.use((err, req, res, next) => res.status(500).json({ message: err?.message }))
+app.use((req, res) => res.status(404).json({ message: `No endpoints found at: ${req.originalUrl}` }))
+
 
 
 // Getting products on Server start

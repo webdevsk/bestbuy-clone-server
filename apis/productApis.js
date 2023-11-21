@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { CACHED_PRODUCT_DATA } from "../index.js"
+import axios from "axios"
 
 const router = Router()
 
@@ -24,8 +25,18 @@ router.get("/products", async (req, res, next) => {
     } catch (error) {
         next(error)
     }
-}, (err, req, res, next) => {
-    res.status(500).json({ message: err?.message })
+})
+
+router.get("/products/:id", async (req, res, next) => {
+    const { id } = req.params
+    console.log("cart/get/product", req.params)
+
+    try {
+        const result = await axios.get(`https://dummyjson.com/products/${id}`)
+        res.json(result.data)
+    } catch (error) {
+        next(error)
+    }
 })
 
 export default router
